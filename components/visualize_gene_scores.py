@@ -56,9 +56,11 @@ def visualize_gene_scores(self):
         "12": "olive",
     }
 
+    pos = nx.circular_layout(G)
     # create node size and color maps for visualization
     nodeSize = {node: (G.nodes[node]["averageScore"] * 10) for node in list(G.nodes)}
     nodeColor = {node: color_map_dict[locusId] for node, locusId in commDict.items()}
+    nodeLabels = {node: f"{node}" for node in G.nodes}
     fig, ax = plt.subplots(figsize=(10, 8))
 
     # trigger visualization
@@ -69,9 +71,12 @@ def visualize_gene_scores(self):
         node_edge_width=0.2,
         edge_width=0.1,
         edge_alpha=0.5,
-        node_layout="community",
+        node_layout=pos,
         node_layout_kwargs=dict(node_to_community=commDict),
         node_alpha=0.75,
+        node_labels=nodeLabels,
+        node_label_fontdict={"size": 5, "color": "black", "weight": "bold"},
+        node_label_offset=(0.05, 0.05),
         edge_layout="bundled",
         ax=ax,
     )

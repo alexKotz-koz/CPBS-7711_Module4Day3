@@ -9,7 +9,7 @@ class ScoreIndividualSubnet:
     def __init__(self, individualSubnet, inputFile, parentNetwork, loci):
         self.individualSubnet = individualSubnet
         self.inputFile = inputFile
-        self.parentNetwork = parentNetwork  ###refactor to replace module1FaNetwork
+        self.parentNetwork = parentNetwork  ###REFACTOR: to replace module1FaNetwork
         self.loci = loci
         self.canditdateGeneScores = {}
 

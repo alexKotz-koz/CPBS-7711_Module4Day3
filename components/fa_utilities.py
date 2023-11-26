@@ -4,17 +4,19 @@ import time
 import os
 
 
-class FaUtilities:
+class Fa_Utilities:
     def __init__(
         self,
         parentNetworkFile=None,
         individualSubnetwork=None,
         inputFile=None,
         module1FaNetworkFile=None,
+        loci=None,
     ):
         self.individualSubnetwork = individualSubnetwork
         self.inputFile = inputFile
         self.module1FaNetworkFile = module1FaNetworkFile
+        self.loci = loci
 
         # check to identify parentNetworkFile datatype
         # (useful for modularity, not complete abstration will need refactor to make completely uncoupled)
@@ -32,7 +34,7 @@ class FaUtilities:
     # Output: faNetwork list (contains a sublist for each FA-FA connection), creation of filtered faNetwork text file
     def filter_parent_network(self):
         # creating a filtered Parent Network: Only contains FA to FA connections. Limitation.
-        print("Filtering Parent Network for FA Genes")
+        # print("Filtering Parent Network for FA Genes")
         faLoci = self.extract_loci()
         faGenes = [string for sublist in faLoci.values() for string in sublist]
         faNetwork = []
@@ -102,12 +104,12 @@ class FaUtilities:
     # Output: loci dictionary, containing one list per locus
     def extract_loci(self):
         loci = {}
-        print("Extracting FA Loci")
+        # print("Extracting FA Loci")
         with open(self.inputFile, "r") as file:
             for line in file:
                 name = line.split()
                 loci[name[3]] = line.strip().split("\t")[2:]
-        print("Loci Extracted")
+        # print("Loci Extracted")
         return loci
 
     def extract_module1_fa_network(self):
@@ -117,3 +119,8 @@ class FaUtilities:
                 row = row.split("\t")
                 module1FASubnetwork.append(row)
         return module1FASubnetwork
+
+    def find_gene_locus(self, gene):
+        for locus in self.loci:
+            if gene in self.loci[locus]:
+                return self.loci[locus], locus
