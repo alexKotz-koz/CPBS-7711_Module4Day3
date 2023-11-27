@@ -130,7 +130,7 @@ class Fa_Utilities:
             subnetGenes
         )
 
-        selectedRows = self.parentNetwork[mask].copy()
+        selectedRows = parentNetwork[mask].copy()
 
         # sort the mask by row
         selectedRows["sorted_genes"] = np.sort(

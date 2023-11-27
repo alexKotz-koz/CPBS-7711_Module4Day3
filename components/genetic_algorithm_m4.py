@@ -22,12 +22,42 @@ class Genetic_Algorithm:
 
     def start_genetic_algorithm(self):
         initialPopulation = self.initialPopulation
-
+        sumOfSelectionScoresList = []
+        sumOfSelectionScores = 0
+        generationXSelectionScores = {}
+        generationXNormalizedDensityScores = {}
         # MUTATION
-        generationX = self.mutate(initialPopulation=initialPopulation)
+        generationXSubnets = self.mutate(initialPopulation=initialPopulation)
 
         # MATING
         # From Nourah: use a cubically transformed density score to determine the likelihood of a subnetwork being selected for mating
+        # Ref: s*i =
+        # Ref: Pairs of subnetworks were sampled (with replacement), where the probability of selecting a parent subnetwork i was equal to s*i
+        for index, subnet in enumerate(generationXSubnets):
+            selectionScore = self.calculate_selection_score(subnet)
+            generationXSelectionScores[index] = {
+                "selectionScore": selectionScore,
+                "subnet": subnet,
+            }
+        for subnet in generationXSelectionScores.items():
+            sumOfSelectionScoresList.append(subnet[1]["selectionScore"])
+        sumOfSelectionScores = sum(sumOfSelectionScoresList)
+
+        for index, subnet in enumerate(generationXSelectionScores.items()):
+            subnetGenes = subnet[1]["subnet"]
+            subnetSelectionScore = subnet[1]["selectionScore"]
+
+            subnetProbabilityScore = self.calculate_normalized_subnet_probability_score(
+                sumOfSelectionScores, subnetSelectionScore
+            )
+            generationXNormalizedDensityScores[index] = {
+                "subnetProbabiltyScore": subnetProbabilityScore,
+                "subnetSelectionScore": subnetSelectionScore,
+                "subnet": subnetGenes,
+            }
+            # print(generationXNormalizedDensityScores[index])
+
+        # print(f"probabilities: {generationXNormalizedDensityScores.items()}")
 
     def mutate(self, initialPopulation=None, generationX=None):
         swappedSubnets = []
@@ -92,4 +122,15 @@ class Genetic_Algorithm:
             subnetGenes=subnet, parentNetwork=self.parentNetwork
         )
 
-        return edgeCount
+        return edgeCount**3
+
+    def calculate_normalized_subnet_probability_score(
+        self, sumOfSelectionScores, subnetSelectionScore
+    ):
+        # print(f"generationX: {generationXSelectionScores}")
+
+        # QUESTION: disregard subnets that have a selection score of 0
+        if subnetSelectionScore == 0:
+            return "NA"
+        else:
+            return subnetSelectionScore / sumOfSelectionScores

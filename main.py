@@ -43,6 +43,7 @@ def main():
         "static/STRING 1.txt",
         faLoci,
         module1FaNetwork,
+        parentNetworkDF,
     )
     randomFaSubnetworks = createRandomFaSubnetworksInstance.create_random_subnetworks()
     crend = time.time()

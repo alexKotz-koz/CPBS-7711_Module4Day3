@@ -1,6 +1,9 @@
 import json
 import random
+import time
 import os
+
+from components.fa_utilities import Fa_Utilities
 
 
 class Create_Random_Fa_Subnetworks:
@@ -11,6 +14,7 @@ class Create_Random_Fa_Subnetworks:
         stringInputFile,
         faLoci,
         module1FaNetwork,
+        parentNetwork,
     ):
         self.prevFaSubnetworkFile = prevFaSubnetworkFile
         self.faInputFile = faInputFile
@@ -20,6 +24,7 @@ class Create_Random_Fa_Subnetworks:
         self.module1FASubnetwork = []
         self.faGenes = []
         self.sortedDictionary = {}
+        self.parentNetwork = parentNetwork
 
     # Input: loci dictionary (faGenes)
     def generate_12_genes(self):
@@ -80,6 +85,22 @@ class Create_Random_Fa_Subnetworks:
 
         return subnetworkToWrite"""
 
+    def check_individual_subnet_edge_count(self):
+        individualSubnetwork = []
+        individualSubnetwork = self.generate_12_genes()
+
+        faUtilitiesInstance = Fa_Utilities()
+
+        # check edgecount = 0
+        individualSubnetworkEdgeCount = faUtilitiesInstance.count_edges(
+            subnetGenes=individualSubnetwork, parentNetwork=self.parentNetwork
+        )
+
+        if individualSubnetworkEdgeCount == 0:
+            return self.check_individual_subnet_edge_count()
+        elif individualSubnetworkEdgeCount > 0:
+            return individualSubnetwork
+
     def create_random_subnetworks(self):
         print("Creating stage 1 random subnetworks...")
         module1FASubnetwork = self.module1FaNetwork
@@ -89,8 +110,11 @@ class Create_Random_Fa_Subnetworks:
 
         count = 0
         while count < 5000:
-            individualSubnetwork = []
-            individualSubnetwork = self.generate_12_genes()
+            start = time.time()
+            individualSubnetwork = self.check_individual_subnet_edge_count()
+            print(f"ind: {individualSubnetwork}")
+            end = time.time()
+            print(f"indiv subnet created in: {end-start}")
             finalList.append(individualSubnetwork)
             count += 1
 
