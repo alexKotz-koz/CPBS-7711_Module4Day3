@@ -121,6 +121,8 @@ class Genetic_Algorithm:
         edgeCount = self.faUtilitiesInstance.count_edges(
             subnetGenes=subnet, parentNetwork=self.parentNetwork
         )
+        """if edgeCount == 0:
+            print(f"edgeCount: {edgeCount}")"""
 
         return edgeCount**3
 

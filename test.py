@@ -1,20 +1,19 @@
 import re
 
 genes = [
-    "AC133919.6",
-    "C16orf88",
-    "KL",
-    "BLM",
-    "DHX40",
-    "RPL10A",
-    "APOBR",
-    "NANS",
-    "RBFOX1",
-    "PIK3C2B",
-    "MPPED2",
-    "AC034193.1",
+    "MAPK14",
+    "BDNF",
+    "FANCD2OS",
+    "NR2F2",
+    "PRDM7",
+    "NOMO1",
+    "PALB2",
+    "C16orf96",
+    "AAED1",
+    "CSNK1A1L",
+    "MYBPH",
+    "TLK2",
 ]
-
 # Step 2: Create a regex pattern
 pattern = re.compile("|".join(genes))
 
