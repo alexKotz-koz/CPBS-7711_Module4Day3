@@ -41,7 +41,7 @@ class Fa_Utilities:
         # read in parentNetworkFile, if both genes in each row are FA genes, add to faNetwork
         with open(self.parentNetworkFile, "r") as file:
             for line in file:
-                line = line.strip().split("\t")[:2]
+                line = line.strip().split("\t")
                 if line[0] in faGenes:
                     if line[1] in faGenes:
                         faNetwork.append(line)
@@ -73,13 +73,14 @@ class Fa_Utilities:
             "created_at_runtime/faNetwork.txt",
             sep="\t",
             header=None,
-            names=["gene1", "gene2"],
-            usecols=[0, 1],
+            names=["gene1", "gene2", "weight"],
+            usecols=[0, 1, 2],
         )
 
         # convert gene1 and gene2 to strings
         self.parentNetwork["gene1"] = self.parentNetwork["gene1"].astype(str)
         self.parentNetwork["gene2"] = self.parentNetwork["gene2"].astype(str)
+        self.parentNetwork["weight"] = self.parentNetwork["weight"].astype(str)
 
         # create a set of sorted gene pairs
         sortedGenePairs = set(
@@ -139,6 +140,6 @@ class Fa_Utilities:
 
         selectedRows.drop_duplicates(subset=["sorted_genes"], inplace=True)
 
-        edgeCount = len(selectedRows)
-
-        return edgeCount
+        weightSum = (selectedRows["weight"].astype(float)).sum()
+        # print(f"weightSum: {weightSum}")
+        return weightSum

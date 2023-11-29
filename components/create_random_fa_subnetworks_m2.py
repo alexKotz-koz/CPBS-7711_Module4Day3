@@ -95,10 +95,14 @@ class Create_Random_Fa_Subnetworks:
             subnetGenes=individualSubnetwork, parentNetwork=self.parentNetwork
         )
 
-        if individualSubnetworkEdgeCount == 0:
+        return individualSubnetworkEdgeCount, individualSubnetwork
+
+        # filter for subnetworks that only return > 0 edge count
+        """if individualSubnetworkEdgeCount == 0:
             return self.check_individual_subnet_edge_count()
         elif individualSubnetworkEdgeCount > 0:
             return individualSubnetworkEdgeCount, individualSubnetwork
+"""
 
     def create_random_subnetworks(self):
         print("Creating stage 1 random subnetworks...")
@@ -110,7 +114,6 @@ class Create_Random_Fa_Subnetworks:
         count = 0
         while count < 5000:
             edgeCount, individualSubnetwork = self.check_individual_subnet_edge_count()
-            print(f"indiv: {individualSubnetwork} | edgeCount: {edgeCount}")
             finalList.append(individualSubnetwork)
             count += 1
 

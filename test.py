@@ -1,29 +1,44 @@
-import re
+import random
 
-genes = [
-    "MAPK14",
-    "BDNF",
-    "FANCD2OS",
-    "NR2F2",
-    "PRDM7",
-    "NOMO1",
-    "PALB2",
-    "C16orf96",
-    "AAED1",
-    "CSNK1A1L",
-    "MYBPH",
-    "TLK2",
+parent1 = [
+    "ANKS3",
+    "FANCE",
+    "FANCD2",
+    "BLM",
+    "KLHL12",
+    "IL27",
+    "KIAA0430",
+    "C16orf3",
+    "UFM1",
+    "CCDC73",
+    "HIATL2",
+    "TANC2",
 ]
-# Step 2: Create a regex pattern
-pattern = re.compile("|".join(genes))
+parent2 = [
+    "NLRC3",
+    "NR4A3",
+    "ELF5",
+    "EXOSC8",
+    "MESP2",
+    "KIAA0556",
+    "CTD-2510F5.6",
+    "RNF8",
+    "VHL",
+    "TCF25",
+    "C16orf88",
+    "KDM5B",
+]
 
-# Step 3 and 4: Open the file and iterate over each line
-count = 0
-with open("static/STRING 1.txt", "r") as file:
-    for line in file:
-        col1, col2, weight = line.strip().split("\t")
-        if pattern.fullmatch(col1) and pattern.fullmatch(col2):
-            print(line)
-            count += 1
+child = []
+index = 0
+while index < 12:
+    print(index)
+    whichParent = random.randint(0, 1)
 
-print(f"Number of lines where both columns contain a gene from the list: {count}")
+    if whichParent == 0:
+        child.append(parent1[index])
+    elif whichParent == 1:
+        child.append(parent2[index])
+    index += 1
+
+print(child)
