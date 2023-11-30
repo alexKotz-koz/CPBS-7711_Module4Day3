@@ -39,7 +39,7 @@ def main():
     print(f"createFaSubnetworkM1: module 1 subnetwork created in: {cend-cstart}")"""
 
     # M2 - 5000 Random FA Subnetworks
-    """crstart = time.time()
+    crstart = time.time()
     createRandomFaSubnetworksInstance = Create_Random_Fa_Subnetworks(
         "static/module1_fa_network.txt",
         "static/Input.gmt.txt",
@@ -60,8 +60,9 @@ def main():
     )
     geneticAlgorithmInstance.start_genetic_algorithm()
     gaend = time.time()
-    print(f"Optimization completed in:{gaend-gastart}\n")"""
+    print(f"Optimization completed in:{gaend-gastart}\n")
 
+    # Create 1000 final (optimized) non fa subnetwork populations to simulate the null case
     nfastart = time.time()
     createRandomNonFaSubnetworksInstance = Create_Random_Non_Fa_Subnetworks(
         "static/STRING 1.txt", faLoci
