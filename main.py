@@ -25,7 +25,11 @@ def main():
         module1FaNetworkFile="static/module1_fa_network.txt",
     )
     parentFaNetworkDF = faUtilitiesInstance.create_parent_network()
+
     faLoci = faUtilitiesInstance.extract_loci()
+    masterParentNetworkDF = faUtilitiesInstance.create_master_parent_network(
+        faLoci=faLoci
+    )
     module1FaNetwork = faUtilitiesInstance.extract_module1_fa_network()
     faEnd = time.time()
     print(
@@ -63,29 +67,40 @@ def main():
     gaend = time.time()
     print(f"Optimization completed in:{gaend-gastart}\n")"""
 
-    finalPopulationFromJSON = {}
+    """finalPopulationFromJSON = {}
     with open("created_at_runtime/finalFaPopulation.json", "r") as file:
         finalPopulationFromJSON = json.load(file)
 
     # NULL CASE
-    """nfastart = time.time()
+    nfastart = time.time()
     createRandomNonFaSubnetworksInstance = Create_Random_Non_Fa_Subnetworks(
         "static/STRING 1.txt",
         faLoci,
         finalPopulationSubnets=finalPopulationFromJSON["finalSubnets"],
         parentFaNetworkDF=parentFaNetworkDF,
+        masterParentNetworkDF=masterParentNetworkDF,
     )
     createRandomNonFaSubnetworksInstance.create_non_fa_subnetworks()
     nfaend = time.time()
     print(f"Non Fa Subnetworks created in: {nfaend-nfastart}\n")"""
 
     nullCasePopulationFromJSON = {}
-    with open("created_at_runtime/nfaSubnetworks.json", "r") as file:
+    with open("created_at_runtime/random_non_fa_subnetworks.json", "r") as file:
         nullCasePopulationFromJSON = json.load(file)
+    nullCaseBinsFromJSON = {}
+    with open("created_at_runtime/bins.json", "r") as file:
+        nullCaseBinsFromJSON = json.load(file)
+
+    for item in nullCasePopulationFromJSON["subnetworks"]:
+        if len(item) != 12:
+            print(f"item: {item}")
 
     # NULL CASE GA
     nullCaseGeneticAlgorithmInstance = Null_Case_Genetic_Algorithm(
-        initialPopulation=nullCasePopulationFromJSON
+        initialPopulation=nullCasePopulationFromJSON,
+        bins=nullCaseBinsFromJSON,
+        faLoci=faLoci,
+        masterParentNetworkDF=masterParentNetworkDF,
     )
     nullCaseGeneticAlgorithmInstance.start_genetic_algorithm()
 

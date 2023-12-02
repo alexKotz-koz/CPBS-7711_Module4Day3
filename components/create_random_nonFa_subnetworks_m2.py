@@ -11,7 +11,12 @@ from components.fa_utilities import Fa_Utilities
 
 class Create_Random_Non_Fa_Subnetworks:
     def __init__(
-        self, parentNetworkFile, faLoci, finalPopulationSubnets, parentFaNetworkDF
+        self,
+        parentNetworkFile,
+        faLoci,
+        finalPopulationSubnets,
+        parentFaNetworkDF,
+        masterParentNetworkDF,
     ):
         self.parentNetworkFile = parentNetworkFile
         self.faLoci = faLoci
@@ -20,7 +25,7 @@ class Create_Random_Non_Fa_Subnetworks:
         self.nfaSubnetworks = {}
         self.bins = ""
         self.nfaGenes = ""
-        self.parentNetworkDF = ""
+        self.parentNetworkDF = masterParentNetworkDF
         self.invertedBins = ""
         self.faUtilitiesInstance = Fa_Utilities()
 
@@ -32,10 +37,8 @@ class Create_Random_Non_Fa_Subnetworks:
         print(f"Number of unique nfa genes: {len(self.nfaGenes)}")
 
         # Create parent network data frame from String file
-        parentNetworkDF = self.create_parent_network()
-        self.parentNetworkDF = parentNetworkDF
 
-        geneDensity = self.calculate_weights_for_bins(parentNetworkDF)
+        geneDensity = self.calculate_weights_for_bins(self.parentNetworkDF)
 
         print(f"Number of unique genes: {len(geneDensity)}")
 
@@ -48,12 +51,12 @@ class Create_Random_Non_Fa_Subnetworks:
             currentDir, "..", "created_at_runtime", "invertedbins.json"
         )
         with open(relativePath, "w") as outputFile:
-            json.dump(self.invertedBins, outputFile)
+            json.dump(self.invertedBins, outputFile)"""
 
         currentDir = os.path.dirname(os.path.abspath(__file__))
         relativePath = os.path.join(currentDir, "..", "created_at_runtime", "bins.json")
         with open(relativePath, "w") as outputFile:
-            json.dump(self.bins, outputFile)"""
+            json.dump(self.bins, outputFile)
 
         # test
         """testData = list(itertools.islice(self.finalPopulationSubnets, 1))
@@ -68,6 +71,7 @@ class Create_Random_Non_Fa_Subnetworks:
                 nfaSubnetworksToScore.append(individualSubnet)
         subend = time.time()
         print(f"thread pool stopped: {subend-substart}")
+
         self.nfaSubnetworks = {
             "averageDensity": self.calculate_average_density(nfaSubnetworksToScore),
             "subnetworks": nfaSubnetworksToScore,
@@ -88,20 +92,25 @@ class Create_Random_Non_Fa_Subnetworks:
             genesBinName = self.invertedBins[gene]
             genesBin = self.bins[genesBinName]
             # added = False
-
-            if all(gene not in self.nfaGenes for gene in genesBin):
-                individualSubnet.append("NA")
-
             randomIndex = random.randint(0, len(genesBin) - 1)
             randomGene = genesBin[randomIndex]
-
-            if randomGene in self.nfaGenes and randomGene not in individualSubnet:
+            if all(gene not in self.nfaGenes for gene in genesBin):
+                individualSubnet.append("NA")
+            elif randomGene in self.nfaGenes and randomGene not in individualSubnet:
                 individualSubnet.append(randomGene)
-                # added = True
+            else:
+                while True:
+                    randomIndex = random.randint(0, len(genesBin) - 1)
+                    randomGene = genesBin[randomIndex]
+                    if randomGene in self.nfaGenes:
+                        individualSubnet.append(randomGene)
+                        break
 
-        print(individualSubnet)
+        if len(individualSubnet) != 12:
+            print(f"creation of nonfa subnet not 12: {individualSubnet}")
         return individualSubnet
 
+    ###REFACTOR: Remove this, This is now in fa_utilities, also using in null case GA
     def genes_to_bins(self, bins):
         invertedBins = {
             gene: binName for binName, genes in bins.items() for gene in genes
@@ -139,8 +148,6 @@ class Create_Random_Non_Fa_Subnetworks:
         start = time.time()
         minGeneEdgeCount = min(geneCounts.values())
         maxGeneEdgeCount = max(geneCounts.values())
-        print(f"min: {minGeneEdgeCount}")
-        print(f"max:{maxGeneEdgeCount}")
 
         edgeCountRange = maxGeneEdgeCount - minGeneEdgeCount
         binSize = edgeCountRange / 128  # Calculate bin size
@@ -159,52 +166,6 @@ class Create_Random_Non_Fa_Subnetworks:
         print(f"Bins created in: {end-start}")
         return bins
 
-    def create_parent_network(self):
-        start = time.time()
-        # read in faNetwork and store the first two columns in a dataframe
-        # note: replace "faNetwork.txt" with "STRING 1.txt" to create full parent network
-        parentNetwork = pd.read_csv(
-            "static/STRING 1.txt",
-            sep="\t",
-            header=None,
-            names=["gene1", "gene2", "weight"],
-            usecols=[0, 1, 2],
-        )
-
-        # convert gene1 and gene2 to strings
-        parentNetwork["gene1"] = parentNetwork["gene1"].astype(str)
-        parentNetwork["gene2"] = parentNetwork["gene2"].astype(str)
-        parentNetwork["weight"] = parentNetwork["weight"].astype(str)
-
-        # create a set of sorted gene pairs
-        sortedGenePairs = set(
-            map(tuple, np.sort(parentNetwork[["gene1", "gene2"]].values, axis=1))
-        )
-
-        # filter the data frame based on the set of sorted gene pairs
-        parentNetwork = parentNetwork[
-            parentNetwork.apply(
-                lambda row: tuple(sorted([row["gene1"], row["gene2"]]))
-                in sortedGenePairs,
-                axis=1,
-            )
-        ]
-        fagenes = [gene for sublist in self.faLoci.values() for gene in sublist]
-        # Create a new DataFrame with genes from faLoci
-        faLociDF = pd.DataFrame(fagenes, columns=["gene1"])
-
-        # Add gene2 and weight columns with null and 0 values respectively
-        faLociDF["gene2"] = "FAGENEROW"
-        faLociDF["weight"] = 0
-
-        # Concatenate faLoci_df and parentNetwork
-        masterParentNetwork = pd.concat([parentNetwork, faLociDF])
-        end = time.time()
-        ex = end - start
-        print(f"Parent Null Case Network finished in : {ex}")
-
-        return masterParentNetwork
-
     def extract_non_fa_genes(self):
         faGenes = [string for sublist in self.faLoci.values() for string in sublist]
         nfaGenes = set()
@@ -219,13 +180,14 @@ class Create_Random_Non_Fa_Subnetworks:
 
         return nfaGenes
 
+    def count_edges_wrapper(self, subnet):
+        return float(self.faUtilitiesInstance.count_edges(subnet, self.parentNetworkDF))
+
     def calculate_average_density(self, subnets):
+        print("Calculating average density of random non fa subnetworks")
         weights = []
-        for subnet in subnets:
-            print("score subnet")
-            weights.append(
-                float(
-                    self.faUtilitiesInstance.count_edges(subnet, self.parentNetworkDF)
-                )
-            )
+
+        with ThreadPoolExecutor() as executor:
+            weights = list(executor.map(self.count_edges_wrapper, subnets))
+
         return sum(weights) / len(subnets)

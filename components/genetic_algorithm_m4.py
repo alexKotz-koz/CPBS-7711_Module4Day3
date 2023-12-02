@@ -216,12 +216,12 @@ class Genetic_Algorithm:
         return subnetSelectionScore / sumOfSelectionScores
 
     def calculate_average_density(self, subnets):
+        print("Calculating average density of mutated random fa subnetworks")
         weights = []
-        faUtiltitiesInstance = Fa_Utilities()
-        for subnet in subnets:
-            weights.append(
-                float(faUtiltitiesInstance.count_edges(subnet, self.parentNetwork))
-            )
+
+        with ThreadPoolExecutor() as executor:
+            weights = list(executor.map(self.count_edges_wrapper, subnets))
+
         return sum(weights) / len(subnets)
 
     def optimize(self, generation2Subnets, generation2AverageDensity):

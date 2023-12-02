@@ -100,6 +100,52 @@ class Fa_Utilities:
         print(f"Parent Network finished in : {ex}")
         return self.parentNetwork
 
+    def create_master_parent_network(self, faLoci):
+        start = time.time()
+        # read in faNetwork and store the first two columns in a dataframe
+        # note: replace "faNetwork.txt" with "STRING 1.txt" to create full parent network
+        parentNetwork = pd.read_csv(
+            "static/STRING 1.txt",
+            sep="\t",
+            header=None,
+            names=["gene1", "gene2", "weight"],
+            usecols=[0, 1, 2],
+        )
+
+        # convert gene1 and gene2 to strings
+        parentNetwork["gene1"] = parentNetwork["gene1"].astype(str)
+        parentNetwork["gene2"] = parentNetwork["gene2"].astype(str)
+        parentNetwork["weight"] = parentNetwork["weight"].astype(str)
+
+        # create a set of sorted gene pairs
+        sortedGenePairs = set(
+            map(tuple, np.sort(parentNetwork[["gene1", "gene2"]].values, axis=1))
+        )
+
+        # filter the data frame based on the set of sorted gene pairs
+        parentNetwork = parentNetwork[
+            parentNetwork.apply(
+                lambda row: tuple(sorted([row["gene1"], row["gene2"]]))
+                in sortedGenePairs,
+                axis=1,
+            )
+        ]
+        fagenes = [gene for sublist in faLoci.values() for gene in sublist]
+        # Create a new DataFrame with genes from faLoci
+        faLociDF = pd.DataFrame(fagenes, columns=["gene1"])
+
+        # Add gene2 and weight columns with null and 0 values respectively
+        faLociDF["gene2"] = "FAGENEROW"
+        faLociDF["weight"] = 0
+
+        # Concatenate faLoci_df and parentNetwork
+        masterParentNetwork = pd.concat([parentNetwork, faLociDF])
+        end = time.time()
+        ex = end - start
+        print(f"Parent Null Case Network finished in : {ex}")
+
+        return masterParentNetwork
+
     # Input: Input.gmt.txt
     # Output: loci dictionary, containing one list per locus
     def extract_loci(self):
@@ -140,8 +186,7 @@ class Fa_Utilities:
         selectedRows.drop_duplicates(subset=["sorted_genes"], inplace=True)
 
         weightSum = (selectedRows["weight"].astype(float)).sum()
-        print(f"weightSum: {weightSum}")
-
+        print(f"weight sum: {weightSum}")
         return weightSum
 
     def calculate_average_gene_score(self, faNetworkFile, geneScoresFile):
@@ -193,3 +238,9 @@ class Fa_Utilities:
                 averageGeneScores[gene]["averageScore"] = "NA"
 
         return averageGeneScores
+
+    def genes_to_bins(self, bins):
+        invertedBins = {
+            gene: binName for binName, genes in bins.items() for gene in genes
+        }
+        return invertedBins

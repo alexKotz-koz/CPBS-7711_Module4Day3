@@ -1,31 +1,47 @@
-import random
-import os
-import time
-import json
+import random, os, time, json
+from concurrent.futures import ThreadPoolExecutor
+import pandas as pd
+import numpy as np
 from components.fa_utilities import Fa_Utilities
 
 
 class Null_Case_Genetic_Algorithm:
-    def __init__(self, initialPopulation, parentNetwork=None):
+    def __init__(self, initialPopulation, bins, faLoci, masterParentNetworkDF):
         self.initialPopulation = initialPopulation
-        self.parentNetwork = parentNetwork
-        self.faUtilitiesInstance = Fa_Utilities(parentNetworkFile=parentNetwork)
+        self.bins = bins
+
+        self.parentNetwork = masterParentNetworkDF
+
+        self.faUtilitiesInstance = Fa_Utilities(parentNetworkFile=self.parentNetwork)
+        self.invertedBins = self.faUtilitiesInstance.genes_to_bins(bins=bins)
         self.generations = {}
 
     def start_genetic_algorithm(self):
         print("Starting Genetic Algorithm Optimization")
         initialPopulation = self.initialPopulation
-
         onestart = time.time()
         generationXSubnets = self.mutate(initialPopulation=initialPopulation)
-        """initialPopulationAverageDensity = self.calculate_average_density(
+        initialPopulationAverageDensity = self.calculate_average_density(
             generationXSubnets
         )
-        oneend = time.time()"""
-        # print(f"1 gen completed in: {oneend-onestart}")
+        print(f"init avg den: {initialPopulationAverageDensity}")
+        currentDir = os.path.dirname(os.path.abspath(__file__))
+        relativePath = os.path.join(currentDir, "..", "created_at_runtime", "TEST.json")
+
+        with open(relativePath, "w") as outputFile:
+            json.dump(generationXSubnets, outputFile)
+        oneend = time.time()
+        print(f"1 gen completed in: {oneend-onestart}")
         # print(f"initialPopulationAverageDensity:{initialPopulationAverageDensity}")
 
-        """averageDensity, secondGeneration = self.mating(generationXSubnets)
+        # TEST MATING
+        averageDensity = 0.1235346322
+        secondGeneration = self.mating(generationXSubnets)
+
+        """
+        averageDensity, secondGeneration = self.mating(generationXSubnets)
+        """
+
         self.generations[1] = {
             "averageDensity": averageDensity,
             "subnets": secondGeneration,
@@ -42,11 +58,11 @@ class Null_Case_Genetic_Algorithm:
 
         currentDir = os.path.dirname(os.path.abspath(__file__))
         relativePath = os.path.join(
-            currentDir, "..", "created_at_runtime", "finalFaPopulation.json"
+            currentDir, "..", "created_at_runtime", "finalNfaPopulation.json"
         )
 
         with open(relativePath, "w") as outputFile:
-            json.dump(finalPopulation, outputFile)"""
+            json.dump(finalPopulation, outputFile)
         return finalPopulation
         # MATING
         # Ref: s*i =
@@ -59,11 +75,10 @@ class Null_Case_Genetic_Algorithm:
 
         if initialPopulation != None and generationX == None:
             print(f"Mutating Initial Population")
-
             for subnet in initialPopulation["subnetworks"]:
-                print(f"Subnet:{subnet}")
-                swappedSubnets = self.mutate_create_swapped_subnets(subnet[1])
+                swappedSubnets = self.mutate_create_swapped_subnets(subnet)
                 mutationStepSubnetworks.append(swappedSubnets)
+
         elif initialPopulation == None and generationX != None:
             print(f"Mutating next generation population")
             for subnet in generationX:
@@ -78,30 +93,28 @@ class Null_Case_Genetic_Algorithm:
 
         return mutationStepSubnetworks
 
-    def mutate_create_swapped_subnets(self, subnetObj):
-        if isinstance(subnetObj, dict):
-            subnet = subnetObj["subnet"]
-        elif isinstance(subnetObj, list):
-            subnet = subnetObj
+    def mutate_create_swapped_subnets(self, subnet):
         # print(f"subnet: {subnet}")
         swappedSubnet = []
         mutationProbability = 0
 
         for gene in subnet:
             # print(gene)
-            # Ref: "Each locus was mutated with a 5% probability"
             mutationProbability = random.randint(1, 100)
             if gene == None:
                 print(f"gene is none before mutation, subnet is: {subnet}")
 
             if mutationProbability <= 5:
-                # find the locus for the gene
+                if gene == "NA" or gene == "FAGENEROW":
+                    swappedSubnet.append(gene)
+                    continue
 
-                locus = self.faUtilitiesInstance.find_gene_locus(gene)[0]
+                genesBinName = self.invertedBins[gene]
+                genesBin = self.bins[genesBinName]
 
                 # if the new gene does not equal the old gene, swap the original gene with a random gene from the locus ... achieved via random_gene_from_locus()
                 # Ref: "replacement gene was chosen form the remaining available genes in that locus uniformly at random"
-                newGene = self.mutate_random_gene_from_locus(gene, locus)
+                newGene = self.mutate_random_gene_from_bin(gene, genesBin)
 
                 if newGene == None:
                     print(f"gene is none after mutation: {newGene}")
@@ -113,17 +126,19 @@ class Null_Case_Genetic_Algorithm:
                     print(f"GENE is none: {gene}")
                 swappedSubnet.append(gene)
 
+        """print(f"og subnet:{subnet}")
+        print(f"swapped subnet: {swappedSubnet}")"""
         return swappedSubnet
 
-    def mutate_random_gene_from_locus(self, gene, locus):
-        randomGeneIndexFromLocus = random.randint(0, len(locus) - 1)
+    def mutate_random_gene_from_bin(self, gene, bin):
+        randomGeneIndexFromBin = random.randint(0, len(bin) - 1)
         # print(f"Start: rand -> {locus[randomGeneIndexFromLocus]} | gene: {gene}")
-        if locus[randomGeneIndexFromLocus] != gene:
-            newGene = locus[randomGeneIndexFromLocus]
+        if bin[randomGeneIndexFromBin] != gene:
+            newGene = bin[randomGeneIndexFromBin]
             return newGene
         else:
-            # print(f"here")
-            return self.mutate_random_gene_from_locus(gene, locus)
+            print(f"here")
+            return self.mutate_random_gene_from_bin(gene, bin)
 
     def mating(self, generationXSubnets):
         sumOfSelectionScoresList = []
@@ -214,13 +229,16 @@ class Null_Case_Genetic_Algorithm:
         # QUESTION: disregard subnets that have a selection score of 0
         return subnetSelectionScore / sumOfSelectionScores
 
+    def count_edges_wrapper(self, subnet):
+        return float(self.faUtilitiesInstance.count_edges(subnet, self.parentNetwork))
+
     def calculate_average_density(self, subnets):
+        print("Calculating average density of mutated random non fa subnetworks")
         weights = []
-        faUtiltitiesInstance = Fa_Utilities()
-        for subnet in subnets:
-            weights.append(
-                float(faUtiltitiesInstance.count_edges(subnet, self.parentNetwork))
-            )
+
+        with ThreadPoolExecutor() as executor:
+            weights = list(executor.map(self.count_edges_wrapper, subnets))
+
         return sum(weights) / len(subnets)
 
     def optimize(self, generation2Subnets, generation2AverageDensity):
