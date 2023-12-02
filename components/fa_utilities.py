@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
-import time
-import os
+import os, json, time
 
 
 class Fa_Utilities:
@@ -141,5 +140,56 @@ class Fa_Utilities:
         selectedRows.drop_duplicates(subset=["sorted_genes"], inplace=True)
 
         weightSum = (selectedRows["weight"].astype(float)).sum()
-        # print(f"weightSum: {weightSum}")
+        print(f"weightSum: {weightSum}")
+
         return weightSum
+
+    def calculate_average_gene_score(self, faNetworkFile, geneScoresFile):
+        faNetwork = []
+        geneScoresFromFile = []
+        scoresByGene = {}
+        averageGeneScores = {}
+
+        with open(faNetworkFile, "r") as file:
+            for line in file:
+                line = line.split()
+                faNetwork.append(line)
+            # create gene scores dictionary
+        with open(geneScoresFile, "r") as file:
+            for line in file:
+                locusId = line.split()[0][:-1]
+                locus_str = " ".join(line.split()[1:])
+                locus_str = locus_str.replace("'", '"')
+                locus = json.loads(locus_str)
+                for gene in locus:
+                    geneScoresFromFile.append({locusId: gene})
+
+        # restructure geneScoresFromFile for use in calculating average gene scores
+        for score in geneScoresFromFile:
+            locusId = ",".join(score.keys())
+            score = list(score.values())[0]
+            gene = score["gene"]
+            if gene not in scoresByGene:
+                scoresByGene[gene] = {"locusId": locusId, "scores": []}
+                scoresByGene[gene]["locusId"] = locusId
+            scoresByGene[gene]["scores"].append(score["geneScore"])
+
+        # calculate average gene scores and store in new dictionary
+        for item in scoresByGene.items():
+            gene = item[0]
+            subitem = item[1]
+
+            locusId = subitem["locusId"]
+            scores = subitem["scores"]
+
+            averageGeneScores[gene] = {
+                "averageScore": sum(scores) / len(scores),
+                "locusId": locusId,
+            }
+
+        # if a gene from averageGeneScores is not in the FA-FA network, mark genescore as "NA"
+        for gene in averageGeneScores:
+            if not any(gene in sublist for sublist in faNetwork):
+                averageGeneScores[gene]["averageScore"] = "NA"
+
+        return averageGeneScores

@@ -1,16 +1,17 @@
 import numpy as np
 import pandas as pd
-import itertools
-import time
+import itertools, time, json, concurrent
 
 # Fa Utilities: create_parent_network, extract_loci
 from components.fa_utilities import Fa_Utilities
 from components.create_random_fa_subnetworks_m2 import Create_Random_Fa_Subnetworks
 from components.create_fa_subnetwork_m1 import Create_Fa_Subnetwork
 from components.genetic_algorithm_m4 import Genetic_Algorithm
+from components.null_case_genetic_algorithm_m4 import Null_Case_Genetic_Algorithm
 from components.create_random_nonFa_subnetworks_m2 import (
     Create_Random_Non_Fa_Subnetworks,
 )
+from components.score_individual_subnet_m3 import ScoreIndividualSubnet
 
 
 def main():
@@ -23,12 +24,12 @@ def main():
         parentNetworkFile="static/STRING 1.txt",
         module1FaNetworkFile="static/module1_fa_network.txt",
     )
-    parentNetworkDF = faUtilitiesInstance.create_parent_network()
+    parentFaNetworkDF = faUtilitiesInstance.create_parent_network()
     faLoci = faUtilitiesInstance.extract_loci()
     module1FaNetwork = faUtilitiesInstance.extract_module1_fa_network()
     faEnd = time.time()
     print(
-        f"faUtilities: parentNetworkDF, faLoci, and module1FaNetwork(from faUtilities-extract_...) created in: {faEnd - faStart}\n"
+        f"faUtilities: parentFaNetworkDF, faLoci, and module1FaNetwork(from faUtilities-extract_...) created in: {faEnd - faStart}\n"
     )
 
     # M1 - FA Subnetwork
@@ -39,14 +40,14 @@ def main():
     print(f"createFaSubnetworkM1: module 1 subnetwork created in: {cend-cstart}")"""
 
     # M2 - 5000 Random FA Subnetworks
-    crstart = time.time()
+    """crstart = time.time()
     createRandomFaSubnetworksInstance = Create_Random_Fa_Subnetworks(
         "static/module1_fa_network.txt",
         "static/Input.gmt.txt",
         "static/STRING 1.txt",
         faLoci,
         module1FaNetwork,
-        parentNetworkDF,
+        parentFaNetworkDF,
     )
     randomFaSubnetworks = createRandomFaSubnetworksInstance.create_random_subnetworks()
     crend = time.time()
@@ -56,20 +57,63 @@ def main():
     geneticAlgorithmInstance = Genetic_Algorithm(
         initialPopulation=randomFaSubnetworks,
         faLoci=faLoci,
-        parentNetwork=parentNetworkDF,
+        parentNetwork=parentFaNetworkDF,
     )
-    geneticAlgorithmInstance.start_genetic_algorithm()
+    finalPopulation = geneticAlgorithmInstance.start_genetic_algorithm()
     gaend = time.time()
-    print(f"Optimization completed in:{gaend-gastart}\n")
+    print(f"Optimization completed in:{gaend-gastart}\n")"""
 
-    # Create 1000 final (optimized) non fa subnetwork populations to simulate the null case
-    nfastart = time.time()
+    finalPopulationFromJSON = {}
+    with open("created_at_runtime/finalFaPopulation.json", "r") as file:
+        finalPopulationFromJSON = json.load(file)
+
+    # NULL CASE
+    """nfastart = time.time()
     createRandomNonFaSubnetworksInstance = Create_Random_Non_Fa_Subnetworks(
-        "static/STRING 1.txt", faLoci
+        "static/STRING 1.txt",
+        faLoci,
+        finalPopulationSubnets=finalPopulationFromJSON["finalSubnets"],
+        parentFaNetworkDF=parentFaNetworkDF,
     )
     createRandomNonFaSubnetworksInstance.create_non_fa_subnetworks()
     nfaend = time.time()
-    print(f"Non Fa Subnetworks created in: {nfaend-nfastart}\n")
+    print(f"Non Fa Subnetworks created in: {nfaend-nfastart}\n")"""
+
+    nullCasePopulationFromJSON = {}
+    with open("created_at_runtime/nfaSubnetworks.json", "r") as file:
+        nullCasePopulationFromJSON = json.load(file)
+
+    # NULL CASE GA
+    nullCaseGeneticAlgorithmInstance = Null_Case_Genetic_Algorithm(
+        initialPopulation=nullCasePopulationFromJSON
+    )
+    nullCaseGeneticAlgorithmInstance.start_genetic_algorithm()
+
+    # SCORE
+    """scoreIndividualSubnetInstance = ScoreIndividualSubnet(
+        loci=faLoci, parentNetwork=parentFaNetworkDF
+    )
+    testData = list(itertools.islice(finalPopulationFromJSON["finalSubnets"], 3))
+    for item in testData:
+        print(f"subnet:{item}")
+    # Process Pool to create gene scores for testData or stage1Subnetwork data
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = []
+        for subnet in testData:
+            futures.append(
+                executor.submit(scoreIndividualSubnetInstance.gene_score, subnet)
+            )
+
+        # as each process completes store the results in geneScores
+        for future in concurrent.futures.as_completed(futures):
+            geneScores = future.result()
+
+    # Calculate average gene scores from final population
+    averageGeneScores = faUtilitiesInstance.calculate_average_gene_score(
+        faNetworkFile="created_at_runtime/faNetwork.txt",
+        geneScoresFile="created_at_runtime/geneScores.txt",
+    )
+    print(averageGeneScores)"""
 
     # Test Dataset: cut out the first 1000 randomly generated fa subnetworks to reduce runtime...
     # If desired, replace the 1000 on line 165 with the number of randomly generated fa subnetworks you wish to test ***MUST BE LESS THAN OR EQUAL TO 5000

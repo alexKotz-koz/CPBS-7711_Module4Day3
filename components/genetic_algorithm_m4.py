@@ -50,14 +50,12 @@ class Genetic_Algorithm:
 
         with open(relativePath, "w") as outputFile:
             json.dump(finalPopulation, outputFile)
-
+        return finalPopulation
         # MATING
-        # From Nourah: use a cubically transformed density score to determine the likelihood of a subnetwork being selected for mating
         # Ref: s*i =
         # Ref: Pairs of subnetworks were sampled (with replacement), where the probability of selecting a parent subnetwork i was equal to s*i
 
-        # print(f"probabilities: {generationXNormalizedDensityScores.items()}")
-
+    # generationX = any generation of subnetworks after the initial generation (population)
     def mutate(self, initialPopulation=None, generationX=None):
         swappedSubnets = []
         mutationStepSubnetworks = []
@@ -123,28 +121,10 @@ class Genetic_Algorithm:
         # print(f"Start: rand -> {locus[randomGeneIndexFromLocus]} | gene: {gene}")
         if locus[randomGeneIndexFromLocus] != gene:
             newGene = locus[randomGeneIndexFromLocus]
-            if newGene == None:
-                print(f"inside:{newGene}")
             return newGene
         else:
             # print(f"here")
             return self.mutate_random_gene_from_locus(gene, locus)
-
-    # Input:
-    def mating_calculate_selection_score(self, subnet):
-        edgeCount = self.faUtilitiesInstance.count_edges(
-            subnetGenes=subnet, parentNetwork=self.parentNetwork
-        )
-        # return edgeCount**3
-        return edgeCount
-
-    def mating_calculate_normalized_subnet_probability_score(
-        self, sumOfSelectionScores, subnetSelectionScore
-    ):
-        # print(f"generationX: {generationXSelectionScores}")
-
-        # QUESTION: disregard subnets that have a selection score of 0
-        return subnetSelectionScore / sumOfSelectionScores
 
     def mating(self, generationXSubnets):
         sumOfSelectionScoresList = []
@@ -218,14 +198,31 @@ class Genetic_Algorithm:
 
         return child
 
+        # Input:
+
+    def mating_calculate_selection_score(self, subnet):
+        edgeCount = self.faUtilitiesInstance.count_edges(
+            subnetGenes=subnet, parentNetwork=self.parentNetwork
+        )
+        # return edgeCount**3
+        return edgeCount
+
+    def mating_calculate_normalized_subnet_probability_score(
+        self, sumOfSelectionScores, subnetSelectionScore
+    ):
+        # print(f"generationX: {generationXSelectionScores}")
+
+        # QUESTION: disregard subnets that have a selection score of 0
+        return subnetSelectionScore / sumOfSelectionScores
+
     def calculate_average_density(self, subnets):
-        edgeCounts = []
+        weights = []
         faUtiltitiesInstance = Fa_Utilities()
         for subnet in subnets:
-            edgeCounts.append(
+            weights.append(
                 float(faUtiltitiesInstance.count_edges(subnet, self.parentNetwork))
             )
-        return sum(edgeCounts) / len(subnets)
+        return sum(weights) / len(subnets)
 
     def optimize(self, generation2Subnets, generation2AverageDensity):
         print("Starting Optimization")

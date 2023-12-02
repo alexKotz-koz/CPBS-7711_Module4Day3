@@ -1,4 +1,4 @@
-import time
+import time, os, json, concurrent.futures
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import ProcessPoolExecutor
@@ -6,14 +6,13 @@ import concurrent.futures
 
 
 class ScoreIndividualSubnet:
-    def __init__(self, individualSubnet, inputFile, parentNetwork, loci):
-        self.individualSubnet = individualSubnet
-        self.inputFile = inputFile
+    def __init__(self, parentNetwork, loci):
+        self.individualSubnet = []
         self.parentNetwork = parentNetwork  ###REFACTOR: to replace module1FaNetwork
         self.loci = loci
         self.canditdateGeneScores = {}
 
-    # Stage 8
+    # 8
     # Input: swapped subnets (a version of the individual subnet per gene in the locus {swapped gene from locus: subnet}), emptyLocusScore
     # Output: candidateGeneScores list (containing a list of individualGeneScores dictionaries, returned from process_subnet_count_edges)
     def count_edges(self, subnets, emptyLocusScore, batch_size=60):
@@ -40,7 +39,7 @@ class ScoreIndividualSubnet:
                 print(f"Count Edges - Generated an exception: {exc} {emptyLocusScore}")
         return candidateGeneScores
 
-    # Stage 9
+    # 9
     # Input: batch of swapped subnetworks, emptyLocusScore
     # Output: batch of individualCandidateGeneScore dictionaries (each containing the gene that was swapped and the gene score for that swapped subnet )
     ## geneScore in individualCandidateGeneScore represents the contribution "gene" makes to the network
@@ -64,16 +63,16 @@ class ScoreIndividualSubnet:
             selectedRows.drop_duplicates(subset=["sorted_genes"], inplace=True)
 
             # count the number of times the mask conditional evaluated to true
-            edgeCount = len(selectedRows)
+            weightSum = (selectedRows["weight"].astype(float)).sum()
 
             individualCandidateGeneScore = {
                 "gene": gene,
-                "geneScore": edgeCount - emptyLocusScore,
+                "geneScore": weightSum - emptyLocusScore,
             }
             batchScores.append(individualCandidateGeneScore)
         return batchScores
 
-    # Stage 3
+    # 3
     # Input: geneLocus (locus returned from find_gene_locus), subnet
     # Output: edge count of empty locus case subnetwork
     def empty_locus_case(self, geneLocus, subnet):
@@ -84,7 +83,7 @@ class ScoreIndividualSubnet:
 
         return edgeCount
 
-    # Stage 4
+    # 4
     # Input: gene in individual subnetwork, individual subnetwork
     # Output: empty locus case edge count -> process_gene_gene_score()
     def process_empty_locus_case(self, gene, subnet):
@@ -99,10 +98,10 @@ class ScoreIndividualSubnet:
         ).tolist()
         selectedRows.drop_duplicates(subset=["sorted_genes"], inplace=True)
 
-        edgeCount = len(selectedRows)
-        return edgeCount
+        weightSum = (selectedRows["weight"].astype(float)).sum()
+        return weightSum
 
-    # Stage 5
+    # 5
     # Input: gene to find locus for, FA loci object
     # Output: locus of gene, locus -> process_gene_gene_score()
     def find_gene_locus(self, gene):
@@ -110,6 +109,7 @@ class ScoreIndividualSubnet:
             if gene in self.loci[locus]:
                 return self.loci[locus], locus
 
+    # 6
     # Input: locus for gene to swap (conatins all genes from locus), original gene to swap, individual subnetwork, empty locus score
     # Output: Dictionary of candidate gene scores: {{gene:gene, geneScore:geneScore}} -> process_gene_gene_score()
     def candidate_gene_score(self, locus, gene, subnet, emptyLocusScore):
@@ -140,6 +140,7 @@ class ScoreIndividualSubnet:
         candidateGeneScores = self.count_edges(swappedSubnets, emptyLocusScore)
         return candidateGeneScores
 
+    # 7
     # Input: gene to swap, gene index in individual subnetwork, individual subnetwork
     # Output: dictionary that contains the locus specific gene to swap: swapped subnetwork -> candidate_gene_score()
     def process_locus_gene_candidate_gene_score(
@@ -149,6 +150,7 @@ class ScoreIndividualSubnet:
         tempSubnet = subnet.copy()
         return {locusGene: tempSubnet}
 
+    # 2
     # Input: Gene from subnet and subnet
     # Output: Candidate Gene Scores object that contains:
     def process_gene_gene_score(self, gene, subnet):
@@ -176,12 +178,14 @@ class ScoreIndividualSubnet:
 
         return locusNumber, candidateGeneScores
 
+    # 1
     # Input: Individual FA subnetwork
     # Output: Average Gene Scores object -> main.py
-    def gene_score(self):
+    def gene_score(self, individualSubnet):
+        self.individualSubnet = individualSubnet
         print(f"Subnet Scoring Initialized for subnet: {self.individualSubnet}")
         start = time.time()
-        subnet = self.individualSubnet
+        subnet = individualSubnet
         geneScores = {}
 
         # for each gene in the subnet, call process_gene which handles the intialization logic of scoring the genes within the genes' locus
@@ -197,7 +201,11 @@ class ScoreIndividualSubnet:
 
         end = time.time()
         print(f"gene score time: {end-start}")
-        with open("gene.txt", "a") as file:
+        currentDir = os.path.dirname(os.path.abspath(__file__))
+        relativePath = os.path.join(
+            currentDir, "..", "created_at_runtime", "geneScores.txt"
+        )
+        with open(relativePath, "a") as file:
             for key, value in geneScores.items():
                 file.write(str(key) + ": " + str(value) + "\n")
         return geneScores
