@@ -186,7 +186,7 @@ class Create_Random_Non_Fa_Subnetworks:
     def calculate_average_density(self, subnets):
         print("Calculating average density of random non fa subnetworks")
         weights = []
-
+        # REFACTOR: Change to process pool becuase count edges is more CPU bound
         with ThreadPoolExecutor() as executor:
             weights = list(executor.map(self.count_edges_wrapper, subnets))
 

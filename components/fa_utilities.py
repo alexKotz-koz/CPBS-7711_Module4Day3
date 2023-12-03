@@ -186,7 +186,7 @@ class Fa_Utilities:
         selectedRows.drop_duplicates(subset=["sorted_genes"], inplace=True)
 
         weightSum = (selectedRows["weight"].astype(float)).sum()
-        print(f"weight sum: {weightSum}")
+        # print(f"weight sum: {weightSum}")
         return weightSum
 
     def calculate_average_gene_score(self, faNetworkFile, geneScoresFile):

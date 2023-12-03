@@ -203,7 +203,7 @@ class ScoreIndividualSubnet:
         print(f"gene score time: {end-start}")
         currentDir = os.path.dirname(os.path.abspath(__file__))
         relativePath = os.path.join(
-            currentDir, "..", "created_at_runtime", "geneScores.txt"
+            currentDir, "..", "created_at_runtime", "scoring_geneScores.txt"
         )
         with open(relativePath, "a") as file:
             for key, value in geneScores.items():

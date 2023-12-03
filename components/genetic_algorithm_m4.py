@@ -2,6 +2,8 @@ import random
 import os
 import time
 import json
+import concurrent
+from concurrent.futures import ThreadPoolExecutor
 from components.fa_utilities import Fa_Utilities
 
 
@@ -149,11 +151,7 @@ class Genetic_Algorithm:
             subnetGenes = subnet[1]["subnet"]
             subnetSelectionScore = subnet[1]["selectionScore"]
 
-            subnetProbabilityScore = (
-                self.mating_calculate_normalized_subnet_probability_score(
-                    sumOfSelectionScores, subnetSelectionScore
-                )
-            )
+            subnetProbabilityScore = subnetSelectionScore / sumOfSelectionScores
             generationXNormalizedDensityScores[index] = {
                 "subnetProbabiltyScore": subnetProbabilityScore,
                 "subnetSelectionScore": subnetSelectionScore,
@@ -207,13 +205,8 @@ class Genetic_Algorithm:
         # return edgeCount**3
         return edgeCount
 
-    def mating_calculate_normalized_subnet_probability_score(
-        self, sumOfSelectionScores, subnetSelectionScore
-    ):
-        # print(f"generationX: {generationXSelectionScores}")
-
-        # QUESTION: disregard subnets that have a selection score of 0
-        return subnetSelectionScore / sumOfSelectionScores
+    def count_edges_wrapper(self, subnet):
+        return float(self.faUtilitiesInstance.count_edges(subnet, self.parentNetwork))
 
     def calculate_average_density(self, subnets):
         print("Calculating average density of mutated random fa subnetworks")

@@ -1,5 +1,5 @@
-import random, os, time, json
-from concurrent.futures import ThreadPoolExecutor
+import random, os, time, json, concurrent
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import pandas as pd
 import numpy as np
 from components.fa_utilities import Fa_Utilities
@@ -20,7 +20,7 @@ class Null_Case_Genetic_Algorithm:
         print("Starting Genetic Algorithm Optimization")
         initialPopulation = self.initialPopulation
         onestart = time.time()
-        generationXSubnets = self.mutate(initialPopulation=initialPopulation)
+        """generationXSubnets = self.mutate(initialPopulation=initialPopulation)
         initialPopulationAverageDensity = self.calculate_average_density(
             generationXSubnets
         )
@@ -31,9 +31,13 @@ class Null_Case_Genetic_Algorithm:
         with open(relativePath, "w") as outputFile:
             json.dump(generationXSubnets, outputFile)
         oneend = time.time()
-        print(f"1 gen completed in: {oneend-onestart}")
+        print(f"1 gen completed in: {oneend-onestart}")"""
         # print(f"initialPopulationAverageDensity:{initialPopulationAverageDensity}")
+        generationXSubnets = {}
+        with open("created_at_runtime/TEST.json", "r") as file:
+            generationXSubnets = json.load(file)
 
+        # print(f"generationXSubnets:{generationXSubnets}")
         # TEST MATING
         averageDensity = 0.1235346322
         secondGeneration = self.mating(generationXSubnets)
@@ -140,6 +144,34 @@ class Null_Case_Genetic_Algorithm:
             print(f"here")
             return self.mutate_random_gene_from_bin(gene, bin)
 
+    def calculate_subnet_density_wrapper(self, subnet):
+        return float(self.faUtilitiesInstance.count_edges(subnet, self.parentNetwork))
+
+    def mating_calculate_selection_score(self, generationXSubnets):
+        generationXSelectionScores = {}
+        with ThreadPoolExecutor() as executor:
+            print(f"Max workers: {executor._max_workers}")
+            future_to_subnet = {
+                executor.submit(self.calculate_subnet_density_wrapper, subnet): subnet
+                for subnet in generationXSubnets
+            }
+            for future in concurrent.futures.as_completed(future_to_subnet):
+                subnet = future_to_subnet[future]
+                try:
+                    selectionScore = future.result()
+                except Exception as exc:
+                    print(f"{subnet} generated an exception: {exc}")
+                else:
+                    generationXSelectionScores[subnet] = {
+                        "selectionScore": selectionScore,
+                        "subnet": subnet,
+                    }
+        sumOfSelectionScores = sum(
+            subnet[1]["selectionScore"] for subnet in generationXSelectionScores.items()
+        )
+        print(f"ss: {sumOfSelectionScores}")
+        return generationXSelectionScores, sumOfSelectionScores
+
     def mating(self, generationXSubnets):
         sumOfSelectionScoresList = []
         sumOfSelectionScores = 0
@@ -147,33 +179,22 @@ class Null_Case_Genetic_Algorithm:
         generationXNormalizedDensityScores = {}
         newGeneration = []
 
-        # Create Selection Scores
-        for index, subnet in enumerate(generationXSubnets):
-            selectionScore = self.mating_calculate_selection_score(subnet)
-            generationXSelectionScores[index] = {
-                "selectionScore": selectionScore,
-                "subnet": subnet,
-            }
-        sumOfSelectionScores = sum(
-            subnet[1]["selectionScore"] for subnet in generationXSelectionScores.items()
-        )
-
+        (
+            generationXSelectionScores,
+            sumOfSelectionScores,
+        ) = self.mating_calculate_selection_score(generationXSubnets=generationXSubnets)
         # Calculate Probability Scores
         for index, subnet in enumerate(generationXSelectionScores.items()):
             subnetGenes = subnet[1]["subnet"]
             subnetSelectionScore = subnet[1]["selectionScore"]
 
-            subnetProbabilityScore = (
-                self.mating_calculate_normalized_subnet_probability_score(
-                    sumOfSelectionScores, subnetSelectionScore
-                )
-            )
+            subnetProbabilityScore = subnetSelectionScore / sumOfSelectionScores
             generationXNormalizedDensityScores[index] = {
                 "subnetProbabiltyScore": subnetProbabilityScore,
                 "subnetSelectionScore": subnetSelectionScore,
                 "subnet": subnetGenes,
             }
-
+        print(f"density list: {generationXNormalizedDensityScores}")
         # Create weights and generate 5000 mutated subnets
         generationXNormalizedDensityScoresList = list(
             generationXNormalizedDensityScores.values()
@@ -211,26 +232,6 @@ class Null_Case_Genetic_Algorithm:
             index += 1
 
         return child
-
-        # Input:
-
-    def mating_calculate_selection_score(self, subnet):
-        edgeCount = self.faUtilitiesInstance.count_edges(
-            subnetGenes=subnet, parentNetwork=self.parentNetwork
-        )
-        # return edgeCount**3
-        return edgeCount
-
-    def mating_calculate_normalized_subnet_probability_score(
-        self, sumOfSelectionScores, subnetSelectionScore
-    ):
-        # print(f"generationX: {generationXSelectionScores}")
-
-        # QUESTION: disregard subnets that have a selection score of 0
-        return subnetSelectionScore / sumOfSelectionScores
-
-    def count_edges_wrapper(self, subnet):
-        return float(self.faUtilitiesInstance.count_edges(subnet, self.parentNetwork))
 
     def calculate_average_density(self, subnets):
         print("Calculating average density of mutated random non fa subnetworks")
