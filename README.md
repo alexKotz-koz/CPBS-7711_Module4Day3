@@ -1,6 +1,6 @@
 # README
 
-## WARNING: This project will take days to run with no test data, modify and run at your own risk
+## WARNING: This project will take days to run with no test data, modify and run at your own discresion
 
 
 ### Installation Requirements:
