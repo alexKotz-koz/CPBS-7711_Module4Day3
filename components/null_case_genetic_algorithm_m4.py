@@ -6,7 +6,9 @@ from components.fa_utilities import Fa_Utilities
 
 
 class Null_Case_Genetic_Algorithm:
-    def __init__(self, initialPopulation, bins, faLoci, masterParentNetworkDF):
+    def __init__(
+        self, initialPopulation, bins, faLoci, masterParentNetworkDF, geneDict
+    ):
         self.initialPopulation = initialPopulation
         self.bins = bins
 
@@ -15,46 +17,51 @@ class Null_Case_Genetic_Algorithm:
         self.faUtilitiesInstance = Fa_Utilities(parentNetworkFile=self.parentNetwork)
         self.invertedBins = self.faUtilitiesInstance.genes_to_bins(bins=bins)
         self.generations = {}
+        self.geneDict = geneDict
 
     def start_genetic_algorithm(self):
         print("Starting Genetic Algorithm Optimization")
         initialPopulation = self.initialPopulation
+
         onestart = time.time()
-        """generationXSubnets = self.mutate(initialPopulation=initialPopulation)
+        # mutate and mate initial population
+        generationXSubnets = self.mutate(initialPopulation=initialPopulation)
+        print(f"First mutated generation: {generationXSubnets}")
+        densityStart = time.time()
         initialPopulationAverageDensity = self.calculate_average_density(
             generationXSubnets
         )
-        print(f"init avg den: {initialPopulationAverageDensity}")
+        densityEnd = time.time()
+        print(f"Average Density calculated in {densityEnd-densityStart}")
+
         currentDir = os.path.dirname(os.path.abspath(__file__))
         relativePath = os.path.join(currentDir, "..", "created_at_runtime", "TEST.json")
-
         with open(relativePath, "w") as outputFile:
             json.dump(generationXSubnets, outputFile)
         oneend = time.time()
-        print(f"1 gen completed in: {oneend-onestart}")"""
-        # print(f"initialPopulationAverageDensity:{initialPopulationAverageDensity}")
+        print(f"1 gen completed in: {oneend-onestart}")
+
         generationXSubnets = {}
         with open("created_at_runtime/TEST.json", "r") as file:
             generationXSubnets = json.load(file)
 
-        # print(f"generationXSubnets:{generationXSubnets}")
         # TEST MATING
-        averageDensity = 0.1235346322
-        secondGeneration = self.mating(generationXSubnets)
+        """averageDensity = 0.1235346322
+        secondGeneration = self.mating(generationXSubnets)"""
 
-        """
         averageDensity, secondGeneration = self.mating(generationXSubnets)
-        """
 
         self.generations[1] = {
             "averageDensity": averageDensity,
             "subnets": secondGeneration,
         }
+
+        # start optimization routine
         finalPopulation = self.run_optimization(secondGeneration, averageDensity)
 
         currentDir = os.path.dirname(os.path.abspath(__file__))
         relativePath = os.path.join(
-            currentDir, "..", "created_at_runtime", "generations.json"
+            currentDir, "..", "created_at_runtime", "null_generations.json"
         )
 
         with open(relativePath, "w") as outputFile:
@@ -68,70 +75,57 @@ class Null_Case_Genetic_Algorithm:
         with open(relativePath, "w") as outputFile:
             json.dump(finalPopulation, outputFile)
         return finalPopulation
-        # MATING
-        # Ref: s*i =
-        # Ref: Pairs of subnetworks were sampled (with replacement), where the probability of selecting a parent subnetwork i was equal to s*i
-
-    # generationX = any generation of subnetworks after the initial generation (population)
+        
+    # Input: either the initial population or a secondary population (this function is called in the optimization function, this generationX population will be the next population to optimize)
+    # Output: a population of 5000 mutated subnetworks
     def mutate(self, initialPopulation=None, generationX=None):
         swappedSubnets = []
         mutationStepSubnetworks = []
 
+        # initial population case, the only difference is the data structure of the initial population vs generationX population
         if initialPopulation != None and generationX == None:
-            print(f"Mutating Initial Population")
+            print(f"Mutating Initial Population\n")
             for subnet in initialPopulation["subnetworks"]:
                 swappedSubnets = self.mutate_create_swapped_subnets(subnet)
                 mutationStepSubnetworks.append(swappedSubnets)
 
+        # secondary population case (generationX population)
         elif initialPopulation == None and generationX != None:
-            print(f"Mutating next generation population")
+            print(f"Mutating next generation population\n")
             for subnet in generationX:
                 swappedSubnets = self.mutate_create_swapped_subnets(subnet)
                 mutationStepSubnetworks.append(swappedSubnets)
 
-        """currentDir = os.path.dirname(os.path.abspath(__file__))
-        relativePath = os.path.join(currentDir, "..", "created_at_runtime", "temp.txt")
-
-        with open(relativePath, "w") as outputFile:
-            json.dump(mutationStepSubnetworks, outputFile)"""
-
         return mutationStepSubnetworks
 
+    # Input: an individual subnetwork from the population of subnetworks
+    # Output: a mutated subnetwork (swapped: using this term as an indicator of randomly replacing genes from the same bin)
     def mutate_create_swapped_subnets(self, subnet):
-        # print(f"subnet: {subnet}")
         swappedSubnet = []
         mutationProbability = 0
 
         for gene in subnet:
-            # print(gene)
+            # create a random number from 1 to 100 to use as a test (whether to swap this gene with another gene from the same bin or not)
             mutationProbability = random.randint(1, 100)
-            if gene == None:
-                print(f"gene is none before mutation, subnet is: {subnet}")
 
+            # reference from paper: "Each locus was mutated with a 5% probablility" pg 161
             if mutationProbability <= 5:
+                # check to see if the gene is one of the FA genes that only exist in the Input.gmt.txt file and not in the STRING 1.txt file
                 if gene == "NA" or gene == "FAGENEROW":
                     swappedSubnet.append(gene)
                     continue
 
+                # use invertedBins to find the bin number of the gene
                 genesBinName = self.invertedBins[gene]
+                # use the bin number from invertedBins search to find the bin (containing the genes)
                 genesBin = self.bins[genesBinName]
-
-                # if the new gene does not equal the old gene, swap the original gene with a random gene from the locus ... achieved via random_gene_from_locus()
-                # Ref: "replacement gene was chosen form the remaining available genes in that locus uniformly at random"
+                # call mutate_random_gene_from_bin to actually mutate the gene
                 newGene = self.mutate_random_gene_from_bin(gene, genesBin)
-
-                if newGene == None:
-                    print(f"gene is none after mutation: {newGene}")
-
+                # append the mutated gene to the new subnetwork
                 swappedSubnet.append(newGene)
-
+            # if the random number was not equal to or less than 5, just add the original gene to the new subnetwork
             else:
-                if gene == None:
-                    print(f"GENE is none: {gene}")
                 swappedSubnet.append(gene)
-
-        """print(f"og subnet:{subnet}")
-        print(f"swapped subnet: {swappedSubnet}")"""
         return swappedSubnet
 
     def mutate_random_gene_from_bin(self, gene, bin):
@@ -141,39 +135,44 @@ class Null_Case_Genetic_Algorithm:
             newGene = bin[randomGeneIndexFromBin]
             return newGene
         else:
-            print(f"here")
             return self.mutate_random_gene_from_bin(gene, bin)
 
     def calculate_subnet_density_wrapper(self, subnet):
-        return float(self.faUtilitiesInstance.count_edges(subnet, self.parentNetwork))
+        start = time.time()
+
+        result = float(
+            self.faUtilitiesInstance.count_edges_null_case(
+                subnet, self.parentNetwork, self.geneDict
+            )
+        )
+        end = time.time()
+
+        return result
 
     def mating_calculate_selection_score(self, generationXSubnets):
         generationXSelectionScores = {}
         with ThreadPoolExecutor() as executor:
-            print(f"Max workers: {executor._max_workers}")
             future_to_subnet = {
-                executor.submit(self.calculate_subnet_density_wrapper, subnet): subnet
+                executor.submit(self.calculate_subnet_density_wrapper, subnet): tuple(
+                    subnet
+                )
                 for subnet in generationXSubnets
             }
             for future in concurrent.futures.as_completed(future_to_subnet):
                 subnet = future_to_subnet[future]
-                try:
-                    selectionScore = future.result()
-                except Exception as exc:
-                    print(f"{subnet} generated an exception: {exc}")
-                else:
-                    generationXSelectionScores[subnet] = {
-                        "selectionScore": selectionScore,
-                        "subnet": subnet,
-                    }
+                selectionScore = future.result()
+                generationXSelectionScores[subnet] = {
+                    "selectionScore": selectionScore,
+                    "subnet": subnet,
+                }
+
         sumOfSelectionScores = sum(
             subnet[1]["selectionScore"] for subnet in generationXSelectionScores.items()
         )
-        print(f"ss: {sumOfSelectionScores}")
+
         return generationXSelectionScores, sumOfSelectionScores
 
     def mating(self, generationXSubnets):
-        sumOfSelectionScoresList = []
         sumOfSelectionScores = 0
         generationXSelectionScores = {}
         generationXNormalizedDensityScores = {}
@@ -183,9 +182,9 @@ class Null_Case_Genetic_Algorithm:
             generationXSelectionScores,
             sumOfSelectionScores,
         ) = self.mating_calculate_selection_score(generationXSubnets=generationXSubnets)
-        # Calculate Probability Scores
+
         for index, subnet in enumerate(generationXSelectionScores.items()):
-            subnetGenes = subnet[1]["subnet"]
+            subnetGenes = list(subnet[1]["subnet"])
             subnetSelectionScore = subnet[1]["selectionScore"]
 
             subnetProbabilityScore = subnetSelectionScore / sumOfSelectionScores
@@ -194,8 +193,7 @@ class Null_Case_Genetic_Algorithm:
                 "subnetSelectionScore": subnetSelectionScore,
                 "subnet": subnetGenes,
             }
-        print(f"density list: {generationXNormalizedDensityScores}")
-        # Create weights and generate 5000 mutated subnets
+
         generationXNormalizedDensityScoresList = list(
             generationXNormalizedDensityScores.values()
         )
@@ -210,8 +208,6 @@ class Null_Case_Genetic_Algorithm:
                 generationXNormalizedDensityScoresList, weights=weights, k=2
             )
             child = self.mating_create_child_subnet(parentSubnets)
-            faUtilitiesInstance = Fa_Utilities()
-            edgeCount = faUtilitiesInstance.count_edges(child, self.parentNetwork)
             newGeneration.append(child)
             i += 1
         averageDensity = self.calculate_average_density(newGeneration)
@@ -238,7 +234,7 @@ class Null_Case_Genetic_Algorithm:
         weights = []
 
         with ThreadPoolExecutor() as executor:
-            weights = list(executor.map(self.count_edges_wrapper, subnets))
+            weights = list(executor.map(self.calculate_subnet_density_wrapper, subnets))
 
         return sum(weights) / len(subnets)
 
@@ -246,21 +242,16 @@ class Null_Case_Genetic_Algorithm:
         print("Starting Optimization")
         print(f"second gen average: {generation2AverageDensity}")
 
-        # Mutate the second generation subnets
         nextGenerationMutated = self.mutate(generationX=generation2Subnets)
 
-        # Perform mating on the mutated generation and get the average density
         nextGenAverageDensity, nextGenerationMated = self.mating(nextGenerationMutated)
         print(f"Next Generation: {nextGenAverageDensity}")
 
-        # Get the last generation's average density
         lastIndex, lastValues = list(self.generations.items())[-1]
         previousAverageDensity = lastValues["averageDensity"]
 
-        # Prepare the next generation's index
         nextIndex = int(lastIndex) + 1
 
-        # Store the next generation's average density and subnets
         self.generations[nextIndex] = {
             "averageDensity": nextGenAverageDensity,
             "subnets": nextGenerationMated,
@@ -269,19 +260,16 @@ class Null_Case_Genetic_Algorithm:
         print(f"lastAvg: {previousAverageDensity}\n")
         print(f"nextAvg: {nextGenAverageDensity}\n")
 
-        # Calculate the improvement in density
         densityImprovement = (
             (nextGenAverageDensity - previousAverageDensity) / previousAverageDensity
         ) * 100
 
         print(f"Percentage: {densityImprovement}")
-        # Return the next generation, its average density, and the improvement
         return nextGenerationMated, nextGenAverageDensity, densityImprovement
 
     def run_optimization(self, initialSubnets, initialAverageDensity):
-        densityImprovement = 100  # Start with a large value
+        densityImprovement = 100  
 
-        # Continue optimizing until the improvement is less than 0.5
         while densityImprovement > 0.5:
             (
                 nextGenerationMated,
@@ -289,7 +277,6 @@ class Null_Case_Genetic_Algorithm:
                 densityImprovement,
             ) = self.optimize(initialSubnets, initialAverageDensity)
 
-            # Update the initial subnets and average density for the next iteration
             initialSubnets, initialAverageDensity = (
                 nextGenerationMated,
                 nextGenAverageDensity,

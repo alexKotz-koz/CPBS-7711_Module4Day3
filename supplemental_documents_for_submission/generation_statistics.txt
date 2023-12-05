@@ -1,0 +1,127 @@
+First Generation: 
+   Average Density: 0.43435048179999974
+Generation: 2: 
+   Average Density: 0.6750643607999999
+   Generation completed in: 28.081473112106323 seconds
+   Density improved by: 55.41927293425653%
+
+Generation: 3: 
+   Average Density: 0.918879827799998
+   Generation completed in: 28.427896976470947 seconds
+   Density improved by: 36.11736615914062%
+
+Generation: 4: 
+   Average Density: 1.178919294399994
+   Generation completed in: 28.778072118759155 seconds
+   Density improved by: 28.299616416935404%
+
+Generation: 5: 
+   Average Density: 1.4971919013999864
+   Generation completed in: 28.894415140151978 seconds
+   Density improved by: 26.99698007419379%
+
+Generation: 6: 
+   Average Density: 1.931636839199996
+   Generation completed in: 29.413092136383057 seconds
+   Density improved by: 29.017318180372953%
+
+Generation: 7: 
+   Average Density: 2.4411579547999995
+   Generation completed in: 29.064753770828247 seconds
+   Density improved by: 26.377686802195488%
+
+Generation: 8: 
+   Average Density: 2.9462114879999985
+   Generation completed in: 29.088688850402832 seconds
+   Density improved by: 20.68909683647969%
+
+Generation: 9: 
+   Average Density: 3.4145957794000004
+   Generation completed in: 29.863739728927612 seconds
+   Density improved by: 15.897850283584328%
+
+Generation: 10: 
+   Average Density: 3.8021457017999754
+   Generation completed in: 31.07937502861023 seconds
+   Density improved by: 11.349803825625116%
+
+Generation: 11: 
+   Average Density: 4.24936325919998
+   Generation completed in: 28.84277606010437 seconds
+   Density improved by: 11.76224144141261%
+
+Generation: 12: 
+   Average Density: 4.631213006799968
+   Generation completed in: 28.90334391593933 seconds
+   Density improved by: 8.986046245240944%
+
+Generation: 13: 
+   Average Density: 4.863457011399976
+   Generation completed in: 28.647153854370117 seconds
+   Density improved by: 5.014755405527802%
+
+Generation: 14: 
+   Average Density: 5.149617495799952
+   Generation completed in: 28.628311157226562 seconds
+   Density improved by: 5.883890486318965%
+
+Generation: 15: 
+   Average Density: 5.352123311799955
+   Generation completed in: 28.48393177986145 seconds
+   Density improved by: 3.9324438400554524%
+
+Generation: 16: 
+   Average Density: 5.537579876399955
+   Generation completed in: 28.6851646900177 seconds
+   Density improved by: 3.46510261060539%
+
+Generation: 17: 
+   Average Density: 5.739721648599965
+   Generation completed in: 28.431812047958374 seconds
+   Density improved by: 3.6503630956457562%
+
+Generation: 18: 
+   Average Density: 5.863063563999929
+   Generation completed in: 28.429829835891724 seconds
+   Density improved by: 2.1489180652174893%
+
+Generation: 19: 
+   Average Density: 6.06637655019995
+   Generation completed in: 28.341289043426514 seconds
+   Density improved by: 3.467692000618794%
+
+Generation: 20: 
+   Average Density: 6.246273639999933
+   Generation completed in: 28.417290925979614 seconds
+   Density improved by: 2.965478458373203%
+
+Generation: 21: 
+   Average Density: 6.328854306799925
+   Generation completed in: 28.512265920639038 seconds
+   Density improved by: 1.3220789155179102%
+
+Generation: 22: 
+   Average Density: 6.389153273999928
+   Generation completed in: 28.317078113555908 seconds
+   Density improved by: 0.952762763636635%
+
+Generation: 23: 
+   Average Density: 6.547219314399932
+   Generation completed in: 28.218021154403687 seconds
+   Density improved by: 2.473974776019841%
+
+Generation: 24: 
+   Average Density: 6.630286831599928
+   Generation completed in: 28.315104007720947 seconds
+   Density improved by: 1.2687449925084682%
+
+Generation: 25: 
+   Average Density: 6.7319030201999235
+   Generation completed in: 28.50034189224243 seconds
+   Density improved by: 1.532606223243505%
+
+Generation: 26: 
+   Average Density: 6.753599594999902
+   Generation completed in: 28.413259983062744 seconds
+   Density improved by: 0.3222948211653578%
+

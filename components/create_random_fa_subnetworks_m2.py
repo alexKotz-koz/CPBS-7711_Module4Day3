@@ -28,6 +28,7 @@ class Create_Random_Fa_Subnetworks:
         self.test = {}
 
     # Input: loci dictionary (faGenes)
+    # Ouput: a list of 12 random genes (one from each locus)
     def generate_12_genes(self):
         faGenes = self.faLoci
 
@@ -42,6 +43,8 @@ class Create_Random_Fa_Subnetworks:
                 genesForSubnetwork.add(faGenes[item][random_int])
         return list(genesForSubnetwork)
 
+    # Input: module 1 Fa subnetwork
+    # Output: a list of the subnetwork
     def extract_module1_fa_network(self):
         module1FASubnetwork = []
         with open(self.prevFaSubnetworkFile, "r") as file:
@@ -50,73 +53,36 @@ class Create_Random_Fa_Subnetworks:
                 module1FASubnetwork.append(row)
         return module1FASubnetwork
 
-    """def create_individual_subnetwork(self, module1FASubnetwork):
-        subnetworkToWrite = []
-        flattenedSubnetwork = []
-        geneSet12 = self.generate_12_genes()
-
-        print(f"a: {geneSet12}")
-        for gene in geneSet12:
-            for row in module1FASubnetwork:
-                if gene == row[0] and row[1] in geneSet12:
-                    subnetworkToWrite.append(row[:2])
-                elif gene == row[1] and row[0] in geneSet12:
-                    subnetworkToWrite.append(row[:2])
-
-        print(f"1: {subnetworkToWrite}")
-
-        for item in subnetworkToWrite:
-            for gene in item:
-                flattenedSubnetwork.append(gene)
-        print(f"2: {flattenedSubnetwork}")
-
-        for gene in geneSet12:
-            if gene not in flattenedSubnetwork:
-                subnetworkToWrite.append(gene)
-
-        print(f"3: {subnetworkToWrite}")
-
-        subnetworkToWrite = [
-            sublist
-            for index, sublist in enumerate(subnetworkToWrite)
-            if sublist not in subnetworkToWrite[:index]
-        ]
-
-        print(f"4: {subnetworkToWrite}")
-
-        return subnetworkToWrite"""
-
+    # Input: individual subnetwork from generation_12_genes()
+    # Ouput: weight of individual subnetwork and the subnetwork itself
     def check_individual_subnet_edge_count(self):
         individualSubnetwork = self.generate_12_genes()
 
         faUtilitiesInstance = Fa_Utilities()
-
+        # create an instance of the fa utilities and call the weight calculation function (passing in the parentFaNetworkDF)
         individualSubnetworkEdgeCount = faUtilitiesInstance.count_edges(
             subnetGenes=individualSubnetwork, parentNetwork=self.parentNetwork
         )
 
         return individualSubnetworkEdgeCount, individualSubnetwork
 
-        # filter for subnetworks that only return > 0 edge count
-        """if individualSubnetworkEdgeCount == 0:
-            return self.check_individual_subnet_edge_count()
-        elif individualSubnetworkEdgeCount > 0:
-            return individualSubnetworkEdgeCount, individualSubnetwork
-"""
-
+    #Input: module1FaNetwork list, individual subnetwork and weight from check_individual_subnet_edge_count
+    #Ouput: subnetwork population
     def create_random_subnetworks(self):
-        print("Creating stage 1 random subnetworks...")
+        print("Creating initial FA population...")
         module1FASubnetwork = self.module1FaNetwork
 
         finalList = []
         finalDictionary = {}
 
+        # create 5000 individual subnetworks and weigh them
         count = 0
         while count < 5000:
             edgeCount, individualSubnetwork = self.check_individual_subnet_edge_count()
             finalList.append(individualSubnetwork)
             count += 1
 
+        # write subnetwork population to file
         for index, item in enumerate(finalList):
             index = str(index)
 
@@ -129,6 +95,6 @@ class Create_Random_Fa_Subnetworks:
 
         with open(relativePath, "w") as outputFile:
             json.dump(finalDictionary, outputFile)
-        print("First 5,000 subnetworks created")
+        print("Initial FA subnetwork population created")
 
         return finalDictionary
